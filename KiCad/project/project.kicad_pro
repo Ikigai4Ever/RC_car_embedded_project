@@ -448,7 +448,8 @@
   },
   "libraries": {
     "pinned_footprint_libs": [
-      "Embedded_Footprints"
+      "Embedded_Footprints",
+      "Graphics"
     ],
     "pinned_symbol_libs": []
   },
