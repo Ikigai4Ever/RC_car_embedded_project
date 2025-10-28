@@ -1,6 +1,6 @@
 # RC_car_embedded_project
 
-![Nucleo Pinnout](https://abacasstorageaccnt.blob.core.windows.net/cirkit/907aabb4-7c13-4fff-be81-882d1241d74c.png)
+![Nucleo Pinnout](image.png)
 
 ## PCB Portion 
 
