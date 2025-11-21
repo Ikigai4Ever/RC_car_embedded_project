@@ -1,0 +1,50 @@
+/**
+ * functions.c
+ *
+ *  Created on: 11/19/2025
+ *      Author: thahrens42
+ */
+
+
+// HEADER FILES //
+#include "main.h"
+
+
+// FUNCTIONS //
+
+/*
+ * Get the x and y values from the joystick module
+ */
+JoyXY Get_Direction(ADC_HandleTypeDef* ADCx){
+
+	JoyXY joystickVal = {0, 0};
+	ADC_ChannelConfTypeDef sConfig = {0};
+
+	// --- Read joystick analog values ---
+	// --- Read X-axis ---
+	sConfig.Channel = ADC_CHANNEL_0;
+	sConfig.Rank = ADC_REGULAR_RANK_1;
+	sConfig.SamplingTime = ADC_SAMPLETIME_2CYCLES_5;
+	HAL_ADC_ConfigChannel(ADCx, &sConfig);
+
+	HAL_ADC_Start(ADCx);
+	HAL_ADC_PollForConversion(ADCx, HAL_MAX_DELAY);
+	joystickVal.x = HAL_ADC_GetValue(ADCx);
+	HAL_ADC_Stop(ADCx);
+
+	// --- Read Y-axis ---
+	sConfig.Channel = ADC_CHANNEL_1;
+	HAL_ADC_ConfigChannel(ADCx, &sConfig);
+
+	HAL_ADC_Start(ADCx);
+	HAL_ADC_PollForConversion(ADCx, HAL_MAX_DELAY);
+	joystickVal.y = HAL_ADC_GetValue(ADCx);
+	HAL_ADC_Stop(ADCx);
+
+
+	return joystickVal;
+}
+
+/*
+ * @brief Creates custom characters
+ */

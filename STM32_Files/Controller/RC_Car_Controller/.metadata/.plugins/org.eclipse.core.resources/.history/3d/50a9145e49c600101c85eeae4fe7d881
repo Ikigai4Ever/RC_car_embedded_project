@@ -1,0 +1,25 @@
+/*
+ * lcd_driver.h
+ *
+ *  Created on: Oct 13, 2025
+ *      Author: tyhah
+ */
+
+
+#ifndef INC_LCD_DRIVER_H_
+#define INC_LCD_DRIVER_H_
+
+#include "main.h"
+
+void LCD_WriteNibble(uint8_t nibble);
+void LCD_WriteCommand(uint8_t command);
+void LCD_WriteData(uint8_t data);
+void LCD_Init (void);
+void setCursor(int a, int b);
+void lcd_send_string (char *str);
+void LCD_Clear (void);
+void create_custom_char (uint8_t loc, char * data);
+void display_custom_char (uint8_t loc);
+
+
+#endif /* INC_LCD_DRIVER_H_ */

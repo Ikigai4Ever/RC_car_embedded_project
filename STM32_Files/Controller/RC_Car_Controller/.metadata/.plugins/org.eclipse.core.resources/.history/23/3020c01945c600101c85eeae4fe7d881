@@ -1,0 +1,45 @@
+/**
+ * functions.c
+ *
+ *  Created on: 11/19/2025
+ *      Author: thahrens42
+ */
+
+
+/**
+ * Header files
+ */
+#include "main.h"
+
+
+/*
+ * Get the x and y values from the joystick module
+ */
+int Get_Direction(USART_TypeDef* USARTx){
+
+	uint32_t x_val, y_val;
+	ADC_ChannelConfTypeDef sConfig = {0};
+
+	// --- Read joystick analog values ---
+	// --- Read X-axis ---
+	sConfig.Channel = ADC_CHANNEL_0;
+	sConfig.Rank = ADC_REGULAR_RANK_1;
+	sConfig.SamplingTime = ADC_SAMPLETIME_2CYCLES_5;
+	HAL_ADC_ConfigChannel(USARTx, &sConfig);
+
+	HAL_ADC_Start(USARTx);
+	HAL_ADC_PollForConversion(USARTx, HAL_MAX_DELAY);
+	x_val = HAL_ADC_GetValue(USARTx);
+	HAL_ADC_Stop(USARTx);
+
+	// --- Read Y-axis ---
+	sConfig.Channel = ADC_CHANNEL_1;
+	HAL_ADC_ConfigChannel(USARTx, &sConfig);
+
+	HAL_ADC_Start(USARTx);
+	HAL_ADC_PollForConversion(USARTx, HAL_MAX_DELAY);
+	adcY = HAL_ADC_GetValue(USARTx);
+	HAL_ADC_Stop(USARTx);
+
+	return x_val, y_val;
+}

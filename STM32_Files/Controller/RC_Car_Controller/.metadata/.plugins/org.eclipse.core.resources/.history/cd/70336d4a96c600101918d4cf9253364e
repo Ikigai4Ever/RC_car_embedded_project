@@ -1,0 +1,20 @@
+/*
+ * functions.h
+ *
+ *  Created on: Nov 20, 2025
+ *      Author: tyhah
+ */
+
+#ifndef INC_FUNCTIONS_H_
+#define INC_FUNCTIONS_H_
+
+#include "main.h"
+
+JoyXY Get_Direction(ADC_HandleTypeDef*);
+void Create_Custom_Characters(void);
+
+
+
+
+
+#endif /* INC_FUNCTIONS_H_ */
