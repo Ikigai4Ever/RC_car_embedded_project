@@ -4,7 +4,7 @@ Absolutely! Here's a professional, clear `README.md` for your Bluetooth STM32 pr
 
 # Bluetooth UART STM32 Library
 
-This project provides **simple and reusable functions** for transmitting and receiving data between two STM32 boards over Bluetooth (e.g., HC-05/HC-06).
+This project provides **simple and reusable functions** for transmitting and receiving data between two STM32 boards over Bluetooth (HC-05).
 
 It uses **DMA** for both TX and RX, supports **circular RX buffers**, and is designed to be **plug-and-play**.
 
@@ -68,6 +68,12 @@ This board **sends joystick X/Y and potentiometer values**.
 ### `main()` Setup
 
 ```c
+// ADC //
+uint32_t adcBuffer[3]; // 0 = JS_X, 1 = JS_Y, 2 = speed_pot
+uint32_t joystickX;
+uint32_t joystickY;
+uint32_t speedPotValue;
+
 HAL_Init();
 SystemClock_Config();
 MX_GPIO_Init();
@@ -80,12 +86,16 @@ BT_StartReceiveDMA(&huart5);
 
 while (1)
 {
-    Get_Direction(&hadc1);
-    joystickX = js.x;
-    joystickY = js.y;
-
-    BT_SendJoystickData(&huart5, joystickX, joystickY, speedPotValue);
-    HAL_Delay(100);
+    joystickX = adcBuffer[0];
+    joystickY = adcBuffer[1];
+    speedPotValue = adcBuffer[2];
+    
+    BT_SendJoystickData(&huart5,
+                        joystickX,
+                        joystickY,
+                        speedPotValue);
+    
+      HAL_Delay(100);
 }
 ```
 
@@ -107,7 +117,7 @@ This board **receives Bluetooth data** from the TX board.
 | ------------- | ----------------------- |
 | UART Instance | USART5 (example)        |
 | Mode          | Asynchronous            |
-| Baud Rate     | **Must match TX board** |
+| Baud Rate     | 9600                    |
 | DMA RX        | Enabled                 |
 | Circular Mode | Enabled                 |
 | DMA TX        | Optional                |
