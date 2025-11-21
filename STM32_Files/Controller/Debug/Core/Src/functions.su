@@ -1,0 +1,8 @@
+../Core/Src/functions.c:24:6:BT_SendString	24	static
+../Core/Src/functions.c:46:6:BT_SendJoystickData	40	static
+../Core/Src/functions.c:67:6:BT_StartReceiveDMA	16	static
+../Core/Src/functions.c:84:5:BT_Available	16	static
+../Core/Src/functions.c:101:9:BT_ReadByte	16	static
+../Core/Src/functions.c:117:5:BT_ReadLine	24	static
+../Core/Src/functions.c:139:10:ReadPotValue	16	static
+../Core/Src/functions.c:161:6:Create_Custom_Characters	72	static
