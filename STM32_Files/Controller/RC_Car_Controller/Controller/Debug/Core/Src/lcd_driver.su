@@ -1,9 +1,0 @@
-../Core/Src/lcd_driver.c:10:13:LCD_WriteNibble	16	static
-../Core/Src/lcd_driver.c:24:13:LCD_WriteCommand	16	static
-../Core/Src/lcd_driver.c:35:13:LCD_WriteData	16	static
-../Core/Src/lcd_driver.c:46:6:setCursor	24	static
-../Core/Src/lcd_driver.c:58:6:LCD_SendString	16	static
-../Core/Src/lcd_driver.c:63:6:LCD_Init	8	static
-../Core/Src/lcd_driver.c:89:6:LCD_Clear	8	static
-../Core/Src/lcd_driver.c:98:6:create_custom_char	32	static
-../Core/Src/lcd_driver.c:125:6:display_custom_char	16	static
