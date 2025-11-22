@@ -1,7 +1,3 @@
-Absolutely! Here's a professional, clear `README.md` for your Bluetooth STM32 project, including **TX and RX setup instructions**, usage, and examples. It’s written so your friend can easily follow it.
-
----
-
 # Bluetooth UART STM32 Library
 
 This project provides **simple and reusable functions** for transmitting and receiving data between two STM32 boards over Bluetooth (HC-05).
@@ -58,7 +54,7 @@ This board **sends joystick X/Y and potentiometer values**.
 | ------------- | ---------------- |
 | UART Instance | USART5 (example) |
 | Mode          | Asynchronous     |
-| Baud Rate     | 115200           |
+| Baud Rate     | 9600             |
 | DMA TX        | Enabled          |
 | DMA RX        | Optional         |
 | Word Length   | 8 bits           |
