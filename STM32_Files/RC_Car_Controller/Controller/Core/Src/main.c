@@ -20,7 +20,6 @@
 #include "main.h"
 
 /* Private includes ----------------------------------------------------------*/
-
 /* USER CODE BEGIN Includes */
 
 /* USER CODE END Includes */
@@ -57,6 +56,11 @@ DMA_HandleTypeDef hdma_uart5_rx;
 #define DELAY 100
 
 // UART //
+//char atCommand[] = "AT+LINK=98D3,02,98689\r\n";
+char atCommand[] = "AT+ADDR?\r\n";
+uint8_t TxBuffer[BT_TX_BUFFER_SIZE];
+uint8_t RxBuffer[BT_RX_BUFFER_SIZE];
+
 
 
 // ADC //
@@ -129,8 +133,16 @@ int main(void)
   LCD_Clear();
   Create_Custom_Characters();
 
+  HAL_Delay(5000);
+
   // UART //
   BT_StartReceiveDMA(&huart5);
+
+  strncpy((char*)TxBuffer, atCommand, BT_TX_BUFFER_SIZE);
+  TxBuffer[BT_TX_BUFFER_SIZE-1] = '\0'; // ensure null termination
+  HAL_UART_Transmit_DMA(&huart5, TxBuffer, BT_TX_BUFFER_SIZE);
+  HAL_UART_Receive_DMA(&huart5, RxBuffer, BT_RX_BUFFER_SIZE);
+  HAL_Delay(100);
 
   // ADC //
   HAL_ADC_Start_DMA(&hadc1, adcBuffer, 3);
@@ -413,7 +425,7 @@ static void MX_UART5_Init(void)
 
   /* USER CODE END UART5_Init 1 */
   huart5.Instance = UART5;
-  huart5.Init.BaudRate = 115200;
+  huart5.Init.BaudRate = 38400;
   huart5.Init.WordLength = UART_WORDLENGTH_8B;
   huart5.Init.StopBits = UART_STOPBITS_1;
   huart5.Init.Parity = UART_PARITY_NONE;
@@ -518,6 +530,19 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+/*
+ *
+ */
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+  if(huart->Instance == UART5)
+  {
+    // Process received data in RxBuffer
+    // Restart DMA reception
+    HAL_UART_Receive_DMA(&huart5, RxBuffer, BT_RX_BUFFER_SIZE);
+  }
+}
 
 /* USER CODE END 4 */
 

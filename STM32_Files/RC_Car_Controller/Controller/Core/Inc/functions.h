@@ -16,8 +16,8 @@
 
 
 // --- VARIABLES --- //
-#define BT_TX_BUFFER_SIZE 64
-#define BT_RX_BUFFER_SIZE 128
+#define BT_TX_BUFFER_SIZE 32
+#define BT_RX_BUFFER_SIZE 32
 
 static volatile uint16_t rxReadIndex = 0;
 static UART_HandleTypeDef *btHuart = NULL;
