@@ -1,0 +1,206 @@
+/**
+ * functions.c
+ *
+ *  Created on: 11/19/2025
+ *      Author: thahrens42
+ */
+
+
+// --- HEADER FILES --- //
+#include "main.h"
+
+
+// --- FUNCTIONS --- //
+
+
+
+/**
+ * @brief Sends a raw string over UART using DMA.
+ *
+ * @param huart Pointer to UART handle (e.g., &huart5)
+ * @param str Null-terminated string to send
+ */
+void BT_SendString(UART_HandleTypeDef *huart, const char *str){
+
+    size_t len = strlen(str);
+    if (len >= BT_TX_BUFFER_SIZE) len = BT_TX_BUFFER_SIZE - 1;
+
+    memcpy(btTxBuffer, str, len);
+    btTxBuffer[len] = '\0';
+
+    HAL_UART_Transmit_DMA(huart, btTxBuffer, (uint16_t)len);
+}
+
+
+/**
+ * @brief Sends joystick X/Y and potentiometer values over Bluetooth.
+ *
+ * Format: "1234,567,890\r\n"
+ *
+ * @param huart Pointer to UART handle
+ * @param x Joystick X ADC value
+ * @param y Joystick Y ADC value
+ * @param pot Potentiometer ADC value
+ */
+void BT_SendJoystickData(UART_HandleTypeDef *huart,
+                         uint32_t x,
+                         uint32_t y,
+                         uint32_t pot){
+
+    int len = snprintf((char*)btTxBuffer, BT_TX_BUFFER_SIZE,
+                       "%lu,%lu,%lu\r\n",
+                       x, y, pot);
+
+    if (len <= 0 || len >= BT_TX_BUFFER_SIZE) return;
+
+    HAL_UART_Transmit_DMA(huart, btTxBuffer, (uint16_t)len);
+}
+
+/**
+ * @brief Starts circular DMA reception for Bluetooth UART.
+ *
+ * This continuously fills btRxBuffer[] without needing interrupts.
+ *
+ * @param huart Pointer to UART handle (e.g., &huart5)
+ */
+void BT_StartReceiveDMA(UART_HandleTypeDef *huart){
+
+    btHuart = huart;
+    rxReadIndex = 0;
+
+    HAL_UART_Receive_DMA(huart, btRxBuffer, BT_RX_BUFFER_SIZE);
+
+    // Force circular mode ON
+    huart->hdmarx->Instance->CCR |= DMA_CCR_CIRC;
+}
+
+
+/**
+ * @brief Returns number of unread bytes in the RX circular buffer.
+ *
+ * @return Count of available bytes
+ */
+int BT_Available(void){
+
+    uint16_t writeIndex =
+        (BT_RX_BUFFER_SIZE - __HAL_DMA_GET_COUNTER(btHuart->hdmarx));
+
+    if (writeIndex >= rxReadIndex)
+        return writeIndex - rxReadIndex;
+    else
+        return (BT_RX_BUFFER_SIZE - rxReadIndex) + writeIndex;
+}
+
+
+/**
+ * @brief Reads a single byte from the circular RX buffer.
+ *
+ * @return Next unread byte
+ */
+uint8_t BT_ReadByte(void){
+
+    uint8_t b = btRxBuffer[rxReadIndex];
+    rxReadIndex = (rxReadIndex + 1) % BT_RX_BUFFER_SIZE;
+    return b;
+}
+
+
+/**
+ * @brief Reads a full line terminated by '\n'.
+ *
+ * @param dest  Output buffer for parsed line
+ * @param maxLen Size of output buffer
+ *
+ * @return Number of bytes read (0 if no full line available)
+ */
+int BT_ReadLine(char *dest, int maxLen){
+
+    int count = 0;
+
+    while (BT_Available() > 0 && count < (maxLen - 1)){
+
+        uint8_t c = BT_ReadByte();
+        dest[count++] = c;
+
+        if (c == '\n'){
+            dest[count] = '\0';
+            return count;
+        }
+    }
+
+    return 0;
+}
+
+
+
+/*
+ * @brief Get the x and y values from the joystick module
+ *
+ * @param ADCx ADC pin value
+ */
+JoyXY Get_Direction(ADC_HandleTypeDef* ADCx){
+
+	JoyXY joystickVal = {0, 0};
+	ADC_ChannelConfTypeDef sConfig = {0};
+
+	// --- Read joystick analog values ---
+	// --- Read X-axis ---
+	sConfig.Channel = ADC_CHANNEL_0;
+	sConfig.Rank = ADC_REGULAR_RANK_1;
+	sConfig.SamplingTime = ADC_SAMPLETIME_2CYCLES_5;
+	HAL_ADC_ConfigChannel(ADCx, &sConfig);
+
+	HAL_ADC_Start(ADCx);
+	HAL_ADC_PollForConversion(ADCx, HAL_MAX_DELAY);
+	joystickVal.x = HAL_ADC_GetValue(ADCx);
+	HAL_ADC_Stop(ADCx);
+
+	// --- Read Y-axis ---
+	sConfig.Channel = ADC_CHANNEL_1;
+	HAL_ADC_ConfigChannel(ADCx, &sConfig);
+
+	HAL_ADC_Start(ADCx);
+	HAL_ADC_PollForConversion(ADCx, HAL_MAX_DELAY);
+	joystickVal.y = HAL_ADC_GetValue(ADCx);
+	HAL_ADC_Stop(ADCx);
+
+
+	return joystickVal;
+}
+
+
+/*
+ *
+ */
+uint32_t ReadPotValue(uint32_t adcValue){
+    // Start the ADC
+    HAL_ADC_Start(&hadc1);
+
+    // Wait for conversion to complete
+    if (HAL_ADC_PollForConversion(&hadc1, 10) == HAL_OK)
+    {
+        // Get ADC value (0..4095 for 12-bit resolution)
+        adcValue = HAL_ADC_GetValue(&hadc1);
+    }
+
+    // Stop ADC (optional for single conversion)
+    HAL_ADC_Stop(&hadc1);
+
+    return adcValue;
+}
+
+
+/*
+ * @brief Creates custom characters in main function
+ */
+
+void Create_Custom_Characters(void){
+	char cc1[8] = {0x00, 0x00, 0x0A, 0x00, 0x11, 0x0E, 0x00, 0x00};  // smiley
+	char cc2[8] = {0x0E, 0x0E, 0x04, 0x0E, 0x15, 0x04, 0x0A, 0x0A};  // Robo
+	char cc3[8] = {0x08, 0x0C, 0x0E, 0x0F, 0x0E, 0x0C, 0x08, 0x00};  // arrow
+	char cc4[8] = {0x00, 0x04, 0x0E, 0x0E, 0x0E, 0x1F, 0x04, 0x00};  // bell
+	char cc5[8] = {0x00, 0x00, 0x0A, 0x15, 0x11, 0x0E, 0x04, 0x00};  // Heart
+	char cc6[8] = {0x00, 0x0E, 0x11, 0x11, 0x11, 0x0A, 0x1B, 0x00};  // omega
+	char cc7[8] = {0x0E, 0x10, 0x17, 0x12, 0x12, 0x12, 0x10, 0x0E};  // CT
+	char cc8[8] = {0x04, 0x04, 0x1F, 0x04, 0x04, 0x00, 0x1F, 0x00};  // +-
+}

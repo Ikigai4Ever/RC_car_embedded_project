@@ -1,0 +1,108 @@
+/**
+ * functions.c
+ *
+ *  Created on: 11/19/2025
+ *      Author: thahrens42
+ */
+
+
+// --- HEADER FILES --- //
+#include "main.h"
+
+// --- GLOBAL VARIABLES --- //
+uint8_t bluetoothTxBuffer[BT_TX_BUFFER_SIZE];
+uint8_t bluetoothRxBuffer[BT_RX_BUFFER_SIZE];
+
+// --- FUNCTIONS --- //
+
+/**
+ * @brief Sends a raw string over UART using DMA.
+ *
+ * @param huart Pointer to UART handle (e.g., &huart5)
+ * @param str Null-terminated string to send
+ */
+void BT_SendString(UART_HandleTypeDef *huart, const char *str)
+{
+    size_t len = strlen(str);
+    if (len >= BT_TX_BUFFER_SIZE) len = BT_TX_BUFFER_SIZE - 1;
+    memcpy(btTxBuffer, str, len);
+    btTxBuffer[len] = '\0';
+    HAL_UART_Transmit_DMA(huart, btTxBuffer, (uint16_t)len);
+}
+
+
+/**
+ * @brief Sends joystick X/Y and potentiometer values over Bluetooth.
+ *
+ * Format: "1234,567,890\r\n"
+ *
+ * @param huart Pointer to UART handle
+ * @param x Joystick X ADC value
+ * @param y Joystick Y ADC value
+ * @param pot Potentiometer ADC value
+ */
+void BT_SendJoystickData(UART_HandleTypeDef *huart,
+                         uint32_t x, uint32_t y, uint32_t pot){
+    // Format the string into buffer
+    int len = snprintf((char*)bluetoothTxBuffer,
+                       BT_TX_BUFFER_SIZE,
+                       "%lu,%lu,%lu\r\n",
+                       x, y, pot);
+
+    // Make sure it fits
+    if (len < 0 || len >= BT_TX_BUFFER_SIZE)
+        return;  // formatting error or too long
+
+    // Send via DMA
+    HAL_UART_Transmit_DMA(huart, bluetoothTxBuffer, len);
+}
+
+/*
+ * @brief Get the x and y values from the joystick module
+ *
+ * @param ADCx ADC pin value
+ */
+JoyXY Get_Direction(ADC_HandleTypeDef* ADCx){
+
+	JoyXY joystickVal = {0, 0};
+	ADC_ChannelConfTypeDef sConfig = {0};
+
+	// --- Read joystick analog values ---
+	// --- Read X-axis ---
+	sConfig.Channel = ADC_CHANNEL_0;
+	sConfig.Rank = ADC_REGULAR_RANK_1;
+	sConfig.SamplingTime = ADC_SAMPLETIME_2CYCLES_5;
+	HAL_ADC_ConfigChannel(ADCx, &sConfig);
+
+	HAL_ADC_Start(ADCx);
+	HAL_ADC_PollForConversion(ADCx, HAL_MAX_DELAY);
+	joystickVal.x = HAL_ADC_GetValue(ADCx);
+	HAL_ADC_Stop(ADCx);
+
+	// --- Read Y-axis ---
+	sConfig.Channel = ADC_CHANNEL_1;
+	HAL_ADC_ConfigChannel(ADCx, &sConfig);
+
+	HAL_ADC_Start(ADCx);
+	HAL_ADC_PollForConversion(ADCx, HAL_MAX_DELAY);
+	joystickVal.y = HAL_ADC_GetValue(ADCx);
+	HAL_ADC_Stop(ADCx);
+
+
+	return joystickVal;
+}
+
+/*
+ * @brief Creates custom characters in main function
+ */
+
+void Create_Custom_Characters(void){
+	char cc1[8] = {0x00, 0x00, 0x0A, 0x00, 0x11, 0x0E, 0x00, 0x00};  // smiley
+	char cc2[8] = {0x0E, 0x0E, 0x04, 0x0E, 0x15, 0x04, 0x0A, 0x0A};  // Robo
+	char cc3[8] = {0x08, 0x0C, 0x0E, 0x0F, 0x0E, 0x0C, 0x08, 0x00};  // arrow
+	char cc4[8] = {0x00, 0x04, 0x0E, 0x0E, 0x0E, 0x1F, 0x04, 0x00};  // bell
+	char cc5[8] = {0x00, 0x00, 0x0A, 0x15, 0x11, 0x0E, 0x04, 0x00};  // Heart
+	char cc6[8] = {0x00, 0x0E, 0x11, 0x11, 0x11, 0x0A, 0x1B, 0x00};  // omega
+	char cc7[8] = {0x0E, 0x10, 0x17, 0x12, 0x12, 0x12, 0x10, 0x0E};  // CT
+	char cc8[8] = {0x04, 0x04, 0x1F, 0x04, 0x04, 0x00, 0x1F, 0x00};  // +-
+}

@@ -1,7 +1,6 @@
-19:41:23 **** Incremental Build of configuration Debug for project Controller ****
-make -j8 all 
+23:54:44 **** Incremental Build of configuration Debug for project Controller ****
+make -j12 all 
 arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
-arm-none-eabi-gcc "../Core/Src/stm32l4xx_it.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/stm32l4xx_it.d" -MT"Core/Src/stm32l4xx_it.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/stm32l4xx_it.o"
 In file included from ../Core/Inc/main.h:34,
                  from ../Core/Src/main.c:20:
 ../Core/Inc/lcd_driver.h:14:13: warning: 'LCD_WriteNibble' declared 'static' but never defined [-Wunused-function]
@@ -17,8 +16,71 @@ In file included from ../Core/Inc/main.h:35:
 ../Core/Inc/functions.h:23:28: warning: 'btHuart' defined but not used [-Wunused-variable]
    23 | static UART_HandleTypeDef *btHuart = NULL;
       |                            ^~~~~~~
+arm-none-eabi-gcc -o "Controller.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\STM32_Apps\STM32CubeIDE_2.0.0\Projects\Controller\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Controller.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: Controller.elf
+ 
+arm-none-eabi-size  Controller.elf 
+arm-none-eabi-objdump -h -S Controller.elf  > "Controller.list"
+   text	   data	    bss	    dec	    hex	filename
+  36984	    116	   2684	  39784	   9b68	Controller.elf
+Finished building: default.size.stdout
+ 
+Finished building: Controller.list
+ 
+23:55:59 **** Incremental Build of configuration Debug for project Controller ****
+make -j12 all 
+arm-none-eabi-size  Controller.elf 
+   text	   data	    bss	    dec	    hex	filename
+  36984	    116	   2684	  39784	   9b68	Controller.elf
+Finished building: default.size.stdout
+ 
+23:56:38 **** Incremental Build of configuration Debug for project Controller ****
+make -j12 all 
+arm-none-eabi-size  Controller.elf 
+   text	   data	    bss	    dec	    hex	filename
+  36984	    116	   2684	  39784	   9b68	Controller.elf
+Finished building: default.size.stdout
+ 
+23:57:55 **** Incremental Build of configuration Debug for project Controller ****
+make -j12 all 
+arm-none-eabi-size  Controller.elf 
+   text	   data	    bss	    dec	    hex	filename
+  36984	    116	   2684	  39784	   9b68	Controller.elf
+Finished building: default.size.stdout
+ 
+23:57:57 **** Incremental Build of configuration Debug for project Controller ****
+make -j12 all 
+arm-none-eabi-size  Controller.elf 
+   text	   data	    bss	    dec	    hex	filename
+  36984	    116	   2684	  39784	   9b68	Controller.elf
+Finished building: default.size.stdout
+ 
+23:58:50 **** Incremental Build of configuration Debug for project Controller ****
+make -j12 all 
+arm-none-eabi-size  Controller.elf 
+   text	   data	    bss	    dec	    hex	filename
+  36984	    116	   2684	  39784	   9b68	Controller.elf
+Finished building: default.size.stdout
+ 
+00:01:53 **** Incremental Build of configuration Debug for project Controller ****
+make -j12 all 
+arm-none-eabi-size  Controller.elf 
+   text	   data	    bss	    dec	    hex	filename
+  36984	    116	   2684	  39784	   9b68	Controller.elf
+Finished building: default.size.stdout
+ 
+00:02:44 **** Incremental Build of configuration Debug for project Controller ****
+make -j12 all 
+arm-none-eabi-size  Controller.elf 
+   text	   data	    bss	    dec	    hex	filename
+  36984	    116	   2684	  39784	   9b68	Controller.elf
+Finished building: default.size.stdout
+ 
+00:04:13 **** Incremental Build of configuration Debug for project Controller ****
+make -j12 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
 In file included from ../Core/Inc/main.h:34,
-                 from ../Core/Src/stm32l4xx_it.c:21:
+                 from ../Core/Src/main.c:20:
 ../Core/Inc/lcd_driver.h:14:13: warning: 'LCD_WriteNibble' declared 'static' but never defined [-Wunused-function]
    14 | static void LCD_WriteNibble(uint8_t nibble);
       |             ^~~~~~~~~~~~~~~
@@ -32,28 +94,14 @@ In file included from ../Core/Inc/main.h:35:
 ../Core/Inc/functions.h:23:28: warning: 'btHuart' defined but not used [-Wunused-variable]
    23 | static UART_HandleTypeDef *btHuart = NULL;
       |                            ^~~~~~~
-arm-none-eabi-gcc -o "Controller.elf" @"objects.list"   -mcpu=cortex-m4 -T"C:\STM32\STM32CubeIDE\Scripts\RC_Car_Controller\Controller\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Controller.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+arm-none-eabi-gcc -o "Controller.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\STM32_Apps\STM32CubeIDE_2.0.0\Projects\Controller\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Controller.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 Finished building target: Controller.elf
  
 arm-none-eabi-size  Controller.elf 
 arm-none-eabi-objdump -h -S Controller.elf  > "Controller.list"
    text	   data	    bss	    dec	    hex	filename
-  34156	    104	   2672	  36932	   9044	Controller.elf
+  37032	    116	   2684	  39832	   9b98	Controller.elf
 Finished building: default.size.stdout
  
 Finished building: Controller.list
- 
-19:41:27 **** Incremental Build of configuration Debug for project Controller ****
-make -j8 all 
-arm-none-eabi-size  Controller.elf 
-   text	   data	    bss	    dec	    hex	filename
-  34156	    104	   2672	  36932	   9044	Controller.elf
-Finished building: default.size.stdout
- 
-19:42:06 **** Incremental Build of configuration Debug for project Controller ****
-make -j8 all 
-arm-none-eabi-size  Controller.elf 
-   text	   data	    bss	    dec	    hex	filename
-  34156	    104	   2672	  36932	   9044	Controller.elf
-Finished building: default.size.stdout
  

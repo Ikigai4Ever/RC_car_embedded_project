@@ -1,0 +1,38 @@
+/*
+ * functions.h
+ *
+ *  Created on: Nov 20, 2025
+ *      Author: tyhah
+ */
+
+#ifndef INC_FUNCTIONS_H_
+#define INC_FUNCTIONS_H_
+
+#include "main.h"
+#include <stdio.h>
+#include <stdint.h>
+
+// --- STRUCTS --- //
+typedef struct {
+    uint32_t x;
+    uint32_t y;
+} JoyXY;
+
+
+// --- VARIABLES --- //
+#define BT_TX_BUFFER_SIZE 64
+#define BT_RX_BUFFER_SIZE 128
+
+extern uint8_t btTxBuffer[BT_TX_BUFFER_SIZE];
+extern uint8_t btRxBuffer[BT_RX_BUFFER_SIZE];
+
+
+// --- FUNCTION PROTOTYPES --- //
+void BT_SendString(UART_HandleTypeDef *huart, const char *str);
+void BT_SendJoystickData(UART_HandleTypeDef *huart, uint32_t x, uint32_t y, uint32_t pot);
+JoyXY Get_Direction(ADC_HandleTypeDef* ADCx);
+void Create_Custom_Characters(void);
+
+
+
+#endif /* INC_FUNCTIONS_H_ */

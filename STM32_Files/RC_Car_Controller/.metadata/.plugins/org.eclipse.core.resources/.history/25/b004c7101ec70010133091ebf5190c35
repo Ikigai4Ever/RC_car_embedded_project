@@ -1,0 +1,36 @@
+/*
+ * functions.h
+ *
+ *  Created on: Nov 20, 2025
+ *      Author: tyhah
+ */
+
+#ifndef INC_FUNCTIONS_H_
+#define INC_FUNCTIONS_H_
+
+#include "main.h"
+#include <stdio.h>
+#include <stdint.h>
+
+// --- Joystick Struct Type --- //
+typedef struct {
+    uint32_t x;
+    uint32_t y;
+} JoyXY;
+
+
+// --- Defined Variables --- //
+#define BT_TX_BUFFER_SIZE 64
+uint8_t bluetoothTxBuffer[BT_TX_BUFFER_SIZE];
+uint8_t bluetoothRxBuffer[BT_RX_BUFFER_SIZE];
+
+
+// --- Functions Prototypes --- //
+JoyXY Get_Direction(ADC_HandleTypeDef* ADCx);
+void Create_Custom_Characters(void);
+void BT_SendString(UART_HandleTypeDef *huart, const char *str);
+void BT_SendJoystickData(UART_HandleTypeDef *huart, uint32_t x, uint32_t y, uint32_t pot);
+
+
+
+#endif /* INC_FUNCTIONS_H_ */

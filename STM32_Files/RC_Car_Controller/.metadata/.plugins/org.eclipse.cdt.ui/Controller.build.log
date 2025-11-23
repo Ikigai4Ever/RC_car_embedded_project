@@ -1,10 +1,32 @@
-19:42:06 **** Incremental Build of configuration Debug for project Controller ****
-make -j8 all 
+00:04:13 **** Incremental Build of configuration Debug for project Controller ****
+make -j12 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+In file included from ../Core/Inc/main.h:34,
+                 from ../Core/Src/main.c:20:
+../Core/Inc/lcd_driver.h:14:13: warning: 'LCD_WriteNibble' declared 'static' but never defined [-Wunused-function]
+   14 | static void LCD_WriteNibble(uint8_t nibble);
+      |             ^~~~~~~~~~~~~~~
+../Core/Inc/lcd_driver.h:15:13: warning: 'LCD_WriteCommand' declared 'static' but never defined [-Wunused-function]
+   15 | static void LCD_WriteCommand(uint8_t command);
+      |             ^~~~~~~~~~~~~~~~
+../Core/Inc/lcd_driver.h:16:13: warning: 'LCD_WriteData' declared 'static' but never defined [-Wunused-function]
+   16 | static void LCD_WriteData(uint8_t data);
+      |             ^~~~~~~~~~~~~
+In file included from ../Core/Inc/main.h:35:
+../Core/Inc/functions.h:23:28: warning: 'btHuart' defined but not used [-Wunused-variable]
+   23 | static UART_HandleTypeDef *btHuart = NULL;
+      |                            ^~~~~~~
+arm-none-eabi-gcc -o "Controller.elf" @"objects.list"   -mcpu=cortex-m4 -T"D:\STM32_Apps\STM32CubeIDE_2.0.0\Projects\Controller\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Controller.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: Controller.elf
+ 
 arm-none-eabi-size  Controller.elf 
+arm-none-eabi-objdump -h -S Controller.elf  > "Controller.list"
    text	   data	    bss	    dec	    hex	filename
-  34156	    104	   2672	  36932	   9044	Controller.elf
+  37032	    116	   2684	  39832	   9b98	Controller.elf
 Finished building: default.size.stdout
  
+Finished building: Controller.list
+ 
 
-19:42:06 Build Finished. 0 errors, 0 warnings. (took 317ms)
+00:04:15 Build Finished. 0 errors, 4 warnings. (took 1s.858ms)
 
