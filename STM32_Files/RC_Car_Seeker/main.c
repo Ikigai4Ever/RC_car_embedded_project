@@ -49,12 +49,11 @@ TIM_HandleTypeDef htim4;
 TIM_HandleTypeDef htim6;
 
 UART_HandleTypeDef huart5;
-DMA_HandleTypeDef hdma_uart5_rx;
 
 /* USER CODE BEGIN PV */
 #define ADC_MAX 4095
 #define ADC_MID 2048
-#define DEADZONE 80
+#define DEADZONE 500
 #define TIM_ARR 3999
 
 #define SPEED_RAMP_STEP 2.0f  // How fast target speed changes (encoder counts per 0.01s)
@@ -72,9 +71,10 @@ DMA_HandleTypeDef hdma_uart5_rx;
 #define ENCODER_MIN_SPEED -100
 
 // Bluetooth UART buffers
-#define BT_RX_BUFFER_SIZE 128
+#define BT_RX_BUFFER_SIZE 64
 uint8_t bt_rx_buffer[BT_RX_BUFFER_SIZE];
-uint8_t bt_line_buffer[64];
+uint8_t bt_rx_index = 0;
+volatile uint8_t bt_line_ready = 0;
 
 // Received Bluetooth values (replacing local ADC)
 volatile uint32_t bt_joy_x = ADC_MID;  // Default to center
@@ -125,7 +125,6 @@ Motor motor2;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_DMA_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_TIM6_Init(void);
 static void MX_TIM4_Init(void);
@@ -186,7 +185,7 @@ void update_encoder_speed(Motor *motor, int32_t current_encoder_count)
 // PID controller function
 void update_pid(Motor *motor)
 {
-    if (motor->target_speed == 0.0f)w
+    if (motor->target_speed == 0.0f)
     {
         motor->pid_error = 0.0f;
         motor->pid_integral = 0.0f;
@@ -249,7 +248,7 @@ void ParseBluetoothData(char *line)
         speed_base = (speed * TIM_ARR) / ADC_MAX;
         float speed_ratio = (float)speed_base / (float)TIM_ARR;
 
-        joy_Y = raw_joy_Y - (int32_t)ADC_MID;
+        joy_Y = (int32_t)ADC_MID - raw_joy_Y ;
         joy_X = raw_joy_X - (int32_t)ADC_MID;
 
         if (speed_base == 0 || (joy_Y > -(int32_t)DEADZONE && joy_Y < (int32_t)DEADZONE))
@@ -267,20 +266,20 @@ void ParseBluetoothData(char *line)
         	{
 
         		motor1.desired_speed = speed_ratio * (float)ENCODER_MAX_SPEED;
-        		motor2.desired_speed = speed_ratio * (float)ENCODER_MAX_SPEED;
+        		motor2.desired_speed = speed_ratio * (float)ENCODER_MIN_SPEED;
 
         	}
 
         	else if (joy_X > (int32_t)DEADZONE) //turning right
         	{
-        		motor1.desired_speed = speed_ratio * (float)ENCODER_MAX_SPEED;
+        		motor1.desired_speed = speed_ratio * (float)ENCODER_MIN_SPEED;
         		motor2.desired_speed = speed_ratio * (float)ENCODER_MIN_SPEED;
 
         	}
 
         	else if (joy_X < -(int32_t)DEADZONE) //turning left
         	{
-        	   motor1.desired_speed = speed_ratio * (float)ENCODER_MIN_SPEED;
+        	   motor1.desired_speed = speed_ratio * (float)ENCODER_MAX_SPEED;
         	   motor2.desired_speed = speed_ratio * (float)ENCODER_MAX_SPEED;
 
         	}
@@ -290,8 +289,29 @@ void ParseBluetoothData(char *line)
         }
         else if (joy_Y < -(int32_t)DEADZONE) //would backwards turning be the same as forwards turning?
         {
-            motor1.desired_speed = speed_ratio * (float)ENCODER_MIN_SPEED;
-            motor2.desired_speed = speed_ratio * (float)ENCODER_MIN_SPEED;
+
+
+        	if ((joy_X > -(int32_t)DEADZONE && joy_X < (int32_t)DEADZONE)) //no turning
+        	{
+
+        		motor1.desired_speed = speed_ratio * (float)ENCODER_MIN_SPEED;
+        		motor2.desired_speed = speed_ratio * (float)ENCODER_MAX_SPEED;
+
+        	}
+
+        	else if (joy_X > (int32_t)DEADZONE) //turning right
+        	{
+        		motor1.desired_speed = speed_ratio * (float)ENCODER_MIN_SPEED;
+        		motor2.desired_speed = speed_ratio * (float)ENCODER_MIN_SPEED;
+
+        	}
+
+        	else if (joy_X < -(int32_t)DEADZONE) //turning left
+        	{
+        	   motor1.desired_speed = speed_ratio * (float)ENCODER_MAX_SPEED;
+        	   motor2.desired_speed = speed_ratio * (float)ENCODER_MAX_SPEED;
+
+        	}
         }
     }
 }
@@ -326,7 +346,6 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_DMA_Init();
   MX_TIM3_Init();
   MX_TIM6_Init();
   MX_TIM4_Init();
@@ -407,18 +426,17 @@ int main(void)
       while(1) { __NOP(); }
   }
 
-  HAL_GPIO_WritePin(GPIOA, Right_EN_Pin, GPIO_PIN_SET);
-  HAL_GPIO_WritePin(GPIOA, Left_EN_Pin, GPIO_PIN_SET);
 
-  // BLUETOOTH UART SETUP (replacing ADC)
-  // Enable UART idle line detection interrupt
-  __HAL_UART_ENABLE_IT(&huart5, UART_IT_IDLE);
+  // ========== UART5 BLUETOOTH SETUP ==========
+  // Enable UART5 interrupt in NVIC
+  HAL_NVIC_SetPriority(UART5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(UART5_IRQn);
 
-  // Start DMA reception with idle line detection
-  HAL_UARTEx_ReceiveToIdle_DMA(&huart5, bt_rx_buffer, BT_RX_BUFFER_SIZE);
-  __HAL_DMA_DISABLE_IT(&hdma_uart5_rx, DMA_IT_HT); // Disable half-transfer interrupt
+  // ARM the UART to receive the first byte
+  // This MUST be called to start the interrupt chain
+  HAL_UART_Receive_IT(&huart5, &bt_rx_buffer[0], 1);
 
-  // Initialize Bluetooth timeout
+  // Initialize safety timeout
   last_bt_rx_time = HAL_GetTick();
 
   /* USER CODE END 2 */
@@ -763,7 +781,7 @@ static void MX_UART5_Init(void)
 
   /* USER CODE END UART5_Init 1 */
   huart5.Instance = UART5;
-  huart5.Init.BaudRate = 9600;
+  huart5.Init.BaudRate = 460800;
   huart5.Init.WordLength = UART_WORDLENGTH_8B;
   huart5.Init.StopBits = UART_STOPBITS_1;
   huart5.Init.Parity = UART_PARITY_NONE;
@@ -779,22 +797,6 @@ static void MX_UART5_Init(void)
   /* USER CODE BEGIN UART5_Init 2 */
 
   /* USER CODE END UART5_Init 2 */
-
-}
-
-/**
-  * Enable DMA controller clock
-  */
-static void MX_DMA_Init(void)
-{
-
-  /* DMA controller clock enable */
-  __HAL_RCC_DMA2_CLK_ENABLE();
-
-  /* DMA interrupt init */
-  /* DMA2_Channel2_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Channel2_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMA2_Channel2_IRQn);
 
 }
 
@@ -818,7 +820,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, LD2_Pin|Left_EN_Pin|Right_EN_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : B1_Pin */
   GPIO_InitStruct.Pin = B1_Pin;
@@ -826,12 +828,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : LD2_Pin Left_EN_Pin Right_EN_Pin */
-  GPIO_InitStruct.Pin = LD2_Pin|Left_EN_Pin|Right_EN_Pin;
+  /*Configure GPIO pin : LD2_Pin */
+  GPIO_InitStruct.Pin = LD2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_InitStruct);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
@@ -839,24 +841,40 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-// UART Idle Line Detection Callback - Receives Bluetooth data continuously
-void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-    if (huart->Instance == UART5) // Change to your UART instance
+    if (huart->Instance == UART5)
     {
-        // Update timestamp for timeout safety
+        // Update timeout
         last_bt_rx_time = HAL_GetTick();
 
-        // Copy received data to line buffer
-        memcpy(bt_line_buffer, bt_rx_buffer, Size);
-        bt_line_buffer[Size] = '\0'; // Null terminate
+        // Toggle LED to confirm we're receiving data
+        HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
 
-        // Parse the received line (updates motor speeds)
-        ParseBluetoothData((char*)bt_line_buffer);
+        uint8_t received_byte = bt_rx_buffer[bt_rx_index];
 
-        // CRITICAL: Restart DMA reception for continuous flow
-        HAL_UARTEx_ReceiveToIdle_DMA(huart, bt_rx_buffer, BT_RX_BUFFER_SIZE);
-        __HAL_DMA_DISABLE_IT(huart->hdmarx, DMA_IT_HT);
+        // Check for newline (end of packet)
+        if (received_byte == '\n' || received_byte == '\r')
+        {
+            if (bt_rx_index > 0)  // Only process if we have data
+            {
+                bt_rx_buffer[bt_rx_index] = '\0';  // Null terminate
+                ParseBluetoothData((char*)bt_rx_buffer);
+                bt_rx_index = 0;  // Reset for next packet
+            }
+        }
+        else if (bt_rx_index < BT_RX_BUFFER_SIZE - 1)
+        {
+            bt_rx_index++;
+        }
+        else
+        {
+            // Buffer overflow protection
+            bt_rx_index = 0;
+        }
+
+        // CRITICAL: Re-enable interrupt for next byte
+        HAL_UART_Receive_IT(&huart5, &bt_rx_buffer[bt_rx_index], 1);
     }
 }
 
@@ -956,6 +974,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_2, motor2.ch2_pwm);
     }
 }
+
+
+
 /* USER CODE END 4 */
 
 /**
