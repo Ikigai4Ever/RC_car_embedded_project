@@ -57,6 +57,10 @@ UART_HandleTypeDef huart5;
 
 /* USER CODE BEGIN PV */
 uint16_t adc_buf[3];
+volatile uint8_t drive_mode = 0;
+volatile uint32_t last_button_press = 0;  // For debouncing
+
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -141,17 +145,6 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	      HAL_Delay(1000);  // Test with 1 second intervals
-
-	      // Force send test data
-	      sprintf(txBuf, "1234,5678,9012\n");
-	      HAL_StatusTypeDef status = HAL_UART_Transmit(&huart5, (uint8_t*)txBuf, strlen(txBuf), 100);
-
-	      if (status != HAL_OK) {
-	          // Toggle LED to indicate error
-	          HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-
-	  }
   }
 
   /* USER CODE END 3 */
@@ -208,6 +201,8 @@ void SystemClock_Config(void)
     Error_Handler();
   }
 }
+
+
 
 /**
   * @brief ADC1 Initialization Function
@@ -575,7 +570,7 @@ static void MX_USART2_UART_Init(void)
 
   /* USER CODE END USART2_Init 1 */
   huart2.Instance = USART2;
-  huart2.Init.BaudRate = 2000000;
+  huart2.Init.BaudRate = 115200;
   huart2.Init.WordLength = UART_WORDLENGTH_8B;
   huart2.Init.StopBits = UART_STOPBITS_1;
   huart2.Init.Parity = UART_PARITY_NONE;
@@ -605,7 +600,7 @@ static void MX_UART5_Init(void)
 
   /* USER CODE END UART5_Init 1 */
   huart5.Instance = UART5;
-  huart5.Init.BaudRate = 2000000;
+  huart5.Init.BaudRate = 460800;
   huart5.Init.WordLength = UART_WORDLENGTH_8B;
   huart5.Init.StopBits = UART_STOPBITS_1;
   huart5.Init.Parity = UART_PARITY_NONE;
@@ -627,59 +622,75 @@ static void MX_UART5_Init(void)
 /**
   * Enable DMA controller clock
   */
-static void MX_DMA_Init(void)
-{
 
-  /* DMA controller clock enable */
-  __HAL_RCC_DMA1_CLK_ENABLE();
-
-  /* DMA interrupt init */
-  /* DMA1_Channel1_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
-
-}
 
 /**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
   */
+
 static void MX_GPIO_Init(void)
 {
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
-  /* USER CODE BEGIN MX_GPIO_Init_1 */
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
 
-  /* USER CODE END MX_GPIO_Init_1 */
+    __HAL_RCC_GPIOC_CLK_ENABLE();
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+    __HAL_RCC_GPIOB_CLK_ENABLE();
 
-  /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOC_CLK_ENABLE();
-  __HAL_RCC_GPIOH_CLK_ENABLE();
-  __HAL_RCC_GPIOA_CLK_ENABLE();
-  __HAL_RCC_GPIOB_CLK_ENABLE();
+    /* BUTTON PC13 = B1_Pin (interrupt mode) */
+    GPIO_InitStruct.Pin = B1_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, LD2_Pin|Left_EN_Pin|Right_EN_Pin, GPIO_PIN_RESET);
+    /* ENABLE EXTI INTERRUPT FOR PC13 ---------------------------------------*/
+    HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
-  /*Configure GPIO pin : B1_Pin */
-  GPIO_InitStruct.Pin = B1_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : LD2_Pin Left_EN_Pin Right_EN_Pin */
-  GPIO_InitStruct.Pin = LD2_Pin|Left_EN_Pin|Right_EN_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  /* USER CODE BEGIN MX_GPIO_Init_2 */
-
-  /* USER CODE END MX_GPIO_Init_2 */
+    /* Example LED Pins (unchanged) */
+    GPIO_InitStruct.Pin = LD2_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 }
 
+/* DMA INIT (unchanged) ====================================================*/
+static void MX_DMA_Init(void)
+{
+    __HAL_RCC_DMA1_CLK_ENABLE();
+    HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
+}
+
+
 /* USER CODE BEGIN 4 */
+
+/**
+  * @brief EXTI line detection callback - handles button press
+  * @param GPIO_Pin: Specifies the pins connected EXTI line
+  * @retval None
+  */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+    if (GPIO_Pin == B1_Pin)
+    {
+        // Debouncing: Only toggle if 200ms has passed since last press
+        uint32_t current_time = HAL_GetTick();
+        if ((current_time - last_button_press) > 200)
+        {
+            drive_mode ^= 1;  // Toggle between 0 and 1
+            last_button_press = current_time;
+        }
+    }
+}
+
+void EXTI15_10_IRQHandler(void)
+{
+    HAL_GPIO_EXTI_IRQHandler(B1_Pin);
+}
+
+
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
     joyX = adc_buf[0];
@@ -687,7 +698,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
     pot = adc_buf[2];
 
     // Format: X,Y,POT\n
-    sprintf(txBuf, "%d,%d,%d\n", joyX, joyY, pot);
+    sprintf(txBuf, "%d,%d,%d,%d\n", joyX, joyY, pot, drive_mode);
 
     HAL_UART_Transmit(&huart5, (uint8_t*)txBuf, strlen(txBuf), 10);
 
